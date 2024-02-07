@@ -26,3 +26,7 @@ class TgBot:
         else:
             parse_mode = None
         self.bot.send_message(to_chat_id, text, parse_mode=parse_mode, disable_notification=disable_notification)
+        time.sleep(1)  # rate limit
+
+    def edit_message(self, text: str, chat_id: int, msg_id: int):
+        self.bot.edit_message_text(text=text, chat_id=chat_id, message_id=msg_id)

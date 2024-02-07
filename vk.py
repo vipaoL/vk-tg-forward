@@ -5,14 +5,16 @@ from vkbottle import Bot, LoopWrapper
 from vkbottle.bot import Message
 from vkbottle_types.codegen.objects import UsersUserFull
 
+import utils
 from tg_bot import TgBot
 
 
 class VkListenerBot:
     is_stopped = False
 
-    def __init__(self, vk_token: str, tg_sender_bot: TgBot):
+    def __init__(self, vk_token: str, vk_target_chat_id: int, tg_sender_bot: TgBot):
         self.vk: Bot = Bot(token=vk_token)
+        self.vk_target_chat_id = vk_target_chat_id
         self.tg_bot = tg_sender_bot
         #asyncio.run(self.test())
 
@@ -39,8 +41,11 @@ class VkListenerBot:
                     text += " [Unknown attachment]: " + str(attachments)
             except Exception as e:
                 text += " [Error while fetching more info]: " + str(e)
-            print(text)
-            self.tg_bot.send_text(text, TgBot.TG_CHANNEL_ID, disable_notification=False, enable_html_md=False)
+            print(message.chat_id, text)
+            if message.chat_id == self.vk_target_chat_id:
+                self.tg_bot.send_text(text, TgBot.TG_CHANNEL_ID, disable_notification=False, enable_html_md=False)
+            else:
+                self.tg_bot.send_text(text, TgBot.TG_ADMIN_CHAT_ID, disable_notification=False, enable_html_md=False)
 
         while not self.is_stopped:
             try:
@@ -69,5 +74,4 @@ class VkListenerBot:
         return last_event_fetch_time
 
     def get_last_update_time_str(self) -> str:
-        return time.strftime("%a, %d %b %Y %H:%M:%S",
-                      time.localtime(self.get_last_update_time()))
+        return utils.get_last_update_time_str(self.get_last_update_time())
