@@ -1,24 +1,23 @@
 import time
 
 import vkbottle
-from vkbottle import Bot
+from vkbottle import Bot, LoopWrapper
 from vkbottle.bot import Message
 from vkbottle_types.codegen.objects import UsersUserFull
 
-from tg import TgSenderBot
+from tg_bot import TgBot
 
 
-class VkListenerBot():
-    # for watchdog
-    error_counter = 0
-    last_update_time = 0
+class VkListenerBot:
+    is_stopped = False
 
-    def __init__(self, vk_token: str, tg_sender_bot: TgSenderBot):
+    def __init__(self, vk_token: str, tg_sender_bot: TgBot):
         self.vk: Bot = Bot(token=vk_token)
         self.tg_bot = tg_sender_bot
         #asyncio.run(self.test())
 
     def start_polling(self):
+        self.is_stopped = False
         #@self.vk.on.raw_event()
         #async def handler():
         #    pass
@@ -41,20 +40,34 @@ class VkListenerBot():
             except Exception as e:
                 text += " [Error while fetching more info]: " + str(e)
             print(text)
-            self.tg_bot.send_text(text, TgSenderBot.TG_CHANNEL_ID, disable_notification=False, enable_html_md=False)
+            self.tg_bot.send_text(text, TgBot.TG_CHANNEL_ID, disable_notification=False, enable_html_md=False)
 
-        while True:
+        while not self.is_stopped:
             try:
-                self.vk.loop_wrapper.add_task(self.watchdog_time_updater_task())
-                time.sleep(4)
                 self.vk.run_forever()
             except Exception as e:
                 self.tg_bot.send_text("error while polling from vk bot. restarting\n"
-                                      + str(e), TgSenderBot.TG_ADMIN_CHAT_ID)
+                                      + str(e), TgBot.TG_ADMIN_CHAT_ID)
                 time.sleep(5)
-            self.error_counter += 1
+
+    def stop(self):
+        self.is_stopped = True
+        self.vk.loop.stop()
 
     async def watchdog_time_updater_task(self):
         self.last_update_time = time.time()
-        self.tg_bot.send_text("wd_update", TgSenderBot.TG_ADMIN_CHAT_ID)
+        #await self.tg_bot.send_text("wd_update", TgSenderBot.TG_ADMIN_CHAT_ID)
         print("wd_update")
+
+    def get_last_update_time(self):
+        try:
+            last_event_fetch_time = self.vk.polling.get_last_event_fetch_time()
+        except AttributeError as e:
+            print(e)
+            print("!!!!!!!!!!!!![use fork of vkbottle. watchdog is not working]!!!!!!!!!!!!!!")
+            last_event_fetch_time = time.time()
+        return last_event_fetch_time
+
+    def get_last_update_time_str(self) -> str:
+        return time.strftime("%a, %d %b %Y %H:%M:%S",
+                      time.localtime(self.get_last_update_time()))
