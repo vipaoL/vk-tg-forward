@@ -1,7 +1,7 @@
 import time
 
 import vkbottle
-from vkbottle import Bot, LoopWrapper
+from vkbottle import Bot
 from vkbottle.bot import Message
 from vkbottle_types.codegen.objects import UsersUserFull
 
@@ -39,8 +39,8 @@ class VkListenerBot:
                 attachments = message.attachments
                 if len(attachments):
                     text += " [Unknown attachment]: " + str(attachments)
-            except Exception as e:
-                text += " [Error while fetching more info]: " + str(e)
+            except Exception as ex:
+                text += " [Error while fetching more info]: " + str(ex)
             print(message.chat_id, text)
 
             if message.chat_id == self.vk_target_chat_id:

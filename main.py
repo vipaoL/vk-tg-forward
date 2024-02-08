@@ -31,15 +31,16 @@ class Watchdog(Thread):
                 for i in range(60):
                     if not is_stopped:
                         sleep(1)
-                last_update_time = vk_bot_wrapper.get_last_update_time()
+                last_update_time = vk_bot.get_last_update_time()
 
                 if time.time() - last_update_time > 120:
                     tg_bot.send_text("*Seems like the bridge stopped working! Last checked for new messages: " +
-                                     vk_bot_wrapper.get_last_update_time_str()
+                                     vk_bot.get_last_update_time_str()
                                      + " " + os.getenv("TG_CHAT_ADMIN_USERNAME") + "*", TgBot.TG_ADMIN_CHAT_ID)
                 self.update_status_in_pinned(last_update_time)
             except Exception as e:
-                if send_debug: tg_bot.send_text("Err in wd " + str(e), TgBot.TG_ADMIN_CHAT_ID)
+                if send_debug:
+                    tg_bot.send_text("Err in wd " + str(e), TgBot.TG_ADMIN_CHAT_ID)
 
     def update_status_in_pinned(self, last_time: int):
         text = ""
@@ -53,14 +54,15 @@ class Watchdog(Thread):
 
 
 class TgCommandListener(Thread):
-    def __init__(self, tg_bot: TgBot, vk_bot: VkListenerBot):
+    def __init__(self, tg_bot_wrapper: TgBot, vk_bot_wrapper: VkListenerBot):
         super().__init__()
-        self.tg_bot_wrapper = tg_bot
-        self.tg_bot = tg_bot.bot
-        self.vk_bot = vk_bot
+        self.tg_bot_wrapper = tg_bot_wrapper
+        self.tg_bot = tg_bot_wrapper.bot
+        self.vk_bot_wrapper = vk_bot_wrapper
 
     def run(self):
         print("TgCommandListener: run()")
+
         @self.tg_bot.message_handler(content_types=['text'])
         def handle_text_message(message: telebot.types.Message):
             text = str(message.text)
@@ -81,7 +83,7 @@ class TgCommandListener(Thread):
     def handle_command(self, command: str, from_chat_id, from_user):
         print(command, from_chat_id, from_user)
         if command == "status":
-            self.tg_bot.send_message(from_chat_id, "Last update: " + self.vk_bot.get_last_update_time_str())
+            self.tg_bot.send_message(from_chat_id, "Last update: " + self.vk_bot_wrapper.get_last_update_time_str())
         elif command == "stop":
             if from_chat_id == TgBot.TG_ADMIN_CHAT_ID:
                 self.tg_bot_wrapper.send_text(
@@ -93,7 +95,7 @@ class TgCommandListener(Thread):
                     self.tg_bot_wrapper.send_text("Stopping...", from_chat_id)
                 global is_stopped
                 is_stopped = True
-                vk_bot_wrapper.stop()
+                vk_bot.stop()
                 tg_bot.bot.stop_polling()
         else:
             self.tg_bot_wrapper.send_text("unknown command: " + command, from_chat_id)
@@ -110,18 +112,21 @@ tg_bot.send_text("*| Starting...*", TgBot.TG_ADMIN_CHAT_ID)
 
 watchdog = Watchdog(int(os.getenv("TG_CHANNEL_PINNED_MSG_ID")))
 watchdog.start()
-if send_debug: tg_bot.send_text("| Watchdog started", TgBot.TG_ADMIN_CHAT_ID)
+if send_debug:
+    tg_bot.send_text("| Watchdog started", TgBot.TG_ADMIN_CHAT_ID)
 
-vk_bot_wrapper = VkListenerBot(vk_token=os.getenv("VK_BOT_TOKEN"),
-                               vk_target_chat_id=int(os.getenv("VK_TARGET_CHAT_ID")),
-                               tg_sender_bot=tg_bot)
+vk_bot = VkListenerBot(vk_token=os.getenv("VK_BOT_TOKEN"),
+                       vk_target_chat_id=int(os.getenv("VK_TARGET_CHAT_ID")),
+                       tg_sender_bot=tg_bot)
 
-command_listener = TgCommandListener(tg_bot, vk_bot_wrapper)
+command_listener = TgCommandListener(tg_bot, vk_bot)
 command_listener.start()
-if send_debug: tg_bot.send_text("| Command listener started", TgBot.TG_ADMIN_CHAT_ID)
+if send_debug:
+    tg_bot.send_text("| Command listener started", TgBot.TG_ADMIN_CHAT_ID)
 
-if send_debug: tg_bot.send_text("| Starting longpolling...", TgBot.TG_ADMIN_CHAT_ID)
-vk_bot_wrapper.start_polling()
+if send_debug:
+    tg_bot.send_text("| Starting longpolling...", TgBot.TG_ADMIN_CHAT_ID)
+vk_bot.start_polling()
 
 is_stopped = True
 tg_bot.send_text("*| Bot is stopped*", TgBot.TG_ADMIN_CHAT_ID)
