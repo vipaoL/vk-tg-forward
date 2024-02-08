@@ -10,6 +10,8 @@ import utils
 from tg_bot import TgBot
 from vk import VkListenerBot
 
+import logging
+
 send_debug = False
 is_stopped = False
 
@@ -37,7 +39,7 @@ class Watchdog(Thread):
                 if send_debug: tg_bot.send_text("Err in wd " + str(e), TgBot.TG_ADMIN_CHAT_ID)
 
     def update_status_in_pinned(self, last_time: int):
-        text=utils.get_last_update_time_str(last_time) + " - last update"
+        text = utils.get_last_update_time_str(last_time) + " - last update"
         print("edit", text, self.pinned_msg_id)
         tg_bot.edit_message(text=text,
                             chat_id=TgBot.TG_CHANNEL_ID,
@@ -85,6 +87,8 @@ class TgCommandListener(Thread):
         else:
             self.tg_bot_wrapper.send_text("unknown command: " + command, from_chat_id)
 
+
+logging.disable(logging.DEBUG)
 
 load_dotenv()
 
