@@ -34,9 +34,9 @@ class Watchdog(Thread):
                 last_update_time = vk_bot_wrapper.get_last_update_time()
 
                 if time.time() - last_update_time > 120:
-                    tg_bot.send_text("<b>Seems like the bridge stopped working! Last checked for new messages: " +
+                    tg_bot.send_text("*Seems like the bridge stopped working! Last checked for new messages: " +
                                      vk_bot_wrapper.get_last_update_time_str()
-                                     + " " + os.getenv("TG_CHAT_ADMIN_USERNAME") + "</b>", TgBot.TG_ADMIN_CHAT_ID)
+                                     + " " + os.getenv("TG_CHAT_ADMIN_USERNAME") + "*", TgBot.TG_ADMIN_CHAT_ID)
                 self.update_status_in_pinned(last_update_time)
             except Exception as e:
                 if send_debug: tg_bot.send_text("Err in wd " + str(e), TgBot.TG_ADMIN_CHAT_ID)
@@ -44,7 +44,7 @@ class Watchdog(Thread):
     def update_status_in_pinned(self, last_time: int):
         text = ""
         if is_stopped:
-            text += "<b>Stopped.</b> "
+            text += "*Stopped.* "
         text += utils.get_last_update_time_str(last_time) + " - last update"
         print("edit", text, self.pinned_msg_id)
         tg_bot.edit_message(text=text,
@@ -106,7 +106,7 @@ load_dotenv()
 tg_bot = TgBot(os.getenv("TG_BOT_TOKEN"),
                int(os.getenv("TG_CHANNEL_ID")),
                int(os.getenv("TG_ADMIN_CHAT_ID")))
-tg_bot.send_text("<b>| Starting...</b>", TgBot.TG_ADMIN_CHAT_ID)
+tg_bot.send_text("*| Starting...*", TgBot.TG_ADMIN_CHAT_ID)
 
 watchdog = Watchdog(int(os.getenv("TG_CHANNEL_PINNED_MSG_ID")))
 watchdog.start()
@@ -124,5 +124,5 @@ if send_debug: tg_bot.send_text("| Starting longpolling...", TgBot.TG_ADMIN_CHAT
 vk_bot_wrapper.start_polling()
 
 is_stopped = True
-tg_bot.send_text("<b>| Bot is stopped</b>", TgBot.TG_ADMIN_CHAT_ID)
+tg_bot.send_text("*| Bot is stopped*", TgBot.TG_ADMIN_CHAT_ID)
 tg_bot.bot.stop_bot()

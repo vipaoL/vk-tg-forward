@@ -20,13 +20,17 @@ class TgBot:
             text,
             to_chat_id,
             disable_notification: Optional[bool] = True,
-            enable_html_md: Optional[bool] = True):
-        if enable_html_md:
-            parse_mode = "HTML"
+            enable_md: Optional[bool] = True):
+        if enable_md:
+            parse_mode = "Markdown"
         else:
             parse_mode = None
         self.bot.send_message(to_chat_id, text, parse_mode=parse_mode, disable_notification=disable_notification)
         time.sleep(1)  # rate limit
 
-    def edit_message(self, text: str, chat_id: int, msg_id: int):
-        self.bot.edit_message_text(text=text, chat_id=chat_id, message_id=msg_id, parse_mode="HTML")
+    def edit_message(self, text: str, chat_id: int, msg_id: int, enable_md: Optional[bool] = True):
+        if enable_md:
+            parse_mode = "Markdown"
+        else:
+            parse_mode = None
+        self.bot.edit_message_text(text=text, chat_id=chat_id, message_id=msg_id, parse_mode=parse_mode)

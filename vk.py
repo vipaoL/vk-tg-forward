@@ -42,10 +42,12 @@ class VkListenerBot:
             except Exception as e:
                 text += " [Error while fetching more info]: " + str(e)
             print(message.chat_id, text)
+
             if message.chat_id == self.vk_target_chat_id:
-                self.tg_bot.send_text(text, TgBot.TG_CHANNEL_ID, disable_notification=False, enable_html_md=False)
+                tg_id = TgBot.TG_CHANNEL_ID
             else:
-                self.tg_bot.send_text(text, TgBot.TG_ADMIN_CHAT_ID, disable_notification=False, enable_html_md=False)
+                tg_id = TgBot.TG_ADMIN_CHAT_ID
+            self.tg_bot.send_text(text, tg_id, disable_notification=False, enable_md=False)
 
         while not self.is_stopped:
             print("starting vk polling")
