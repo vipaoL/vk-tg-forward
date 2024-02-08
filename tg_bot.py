@@ -29,4 +29,4 @@ class TgBot:
         time.sleep(1)  # rate limit
 
     def edit_message(self, text: str, chat_id: int, msg_id: int):
-        self.bot.edit_message_text(text=text, chat_id=chat_id, message_id=msg_id)
+        self.bot.edit_message_text(text=text, chat_id=chat_id, message_id=msg_id, parse_mode="HTML")

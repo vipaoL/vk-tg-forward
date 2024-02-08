@@ -23,11 +23,14 @@ class Watchdog(Thread):
         self.pinned_msg_id = pinned_msg_id
 
     def run(self):
+        print("Watchdog: run()")
         if send_debug:
             tg_bot.send_text("| Watchdog started", TgBot.TG_ADMIN_CHAT_ID)
         while not is_stopped:
             try:
-                sleep(60)
+                for i in range(60):
+                    if not is_stopped:
+                        sleep(1)
                 last_update_time = vk_bot_wrapper.get_last_update_time()
 
                 if time.time() - last_update_time > 120:
@@ -39,7 +42,10 @@ class Watchdog(Thread):
                 if send_debug: tg_bot.send_text("Err in wd " + str(e), TgBot.TG_ADMIN_CHAT_ID)
 
     def update_status_in_pinned(self, last_time: int):
-        text = utils.get_last_update_time_str(last_time) + " - last update"
+        text = ""
+        if is_stopped:
+            text += "<b>Stopped.</b> "
+        text += utils.get_last_update_time_str(last_time) + " - last update"
         print("edit", text, self.pinned_msg_id)
         tg_bot.edit_message(text=text,
                             chat_id=TgBot.TG_CHANNEL_ID,
@@ -54,6 +60,7 @@ class TgCommandListener(Thread):
         self.vk_bot = vk_bot
 
     def run(self):
+        print("TgCommandListener: run()")
         @self.tg_bot.message_handler(content_types=['text'])
         def handle_text_message(message: telebot.types.Message):
             text = str(message.text)
@@ -77,9 +84,13 @@ class TgCommandListener(Thread):
             self.tg_bot.send_message(from_chat_id, "Last update: " + self.vk_bot.get_last_update_time_str())
         elif command == "stop":
             if from_chat_id == TgBot.TG_ADMIN_CHAT_ID:
-                self.tg_bot_wrapper.send_text("| Got \"/stop\". Stopping... " + os.getenv("TG_CHAT_ADMIN_USERNAME"),
-                                              TgBot.TG_ADMIN_CHAT_ID, disable_notification=False)
-                self.tg_bot_wrapper.send_text("Stopping...", from_chat_id)
+                self.tg_bot_wrapper.send_text(
+                    "| Got \"/stop\". Stopping... " + os.getenv("TG_CHAT_ADMIN_USERNAME"),
+                    TgBot.TG_ADMIN_CHAT_ID,
+                    disable_notification=False)
+
+                if from_chat_id != TgBot.TG_ADMIN_CHAT_ID:
+                    self.tg_bot_wrapper.send_text("Stopping...", from_chat_id)
                 global is_stopped
                 is_stopped = True
                 vk_bot_wrapper.stop()
@@ -95,7 +106,7 @@ load_dotenv()
 tg_bot = TgBot(os.getenv("TG_BOT_TOKEN"),
                int(os.getenv("TG_CHANNEL_ID")),
                int(os.getenv("TG_ADMIN_CHAT_ID")))
-if send_debug: tg_bot.send_text("<b>| Starting...</b>", TgBot.TG_ADMIN_CHAT_ID)
+tg_bot.send_text("<b>| Starting...</b>", TgBot.TG_ADMIN_CHAT_ID)
 
 watchdog = Watchdog(int(os.getenv("TG_CHANNEL_PINNED_MSG_ID")))
 watchdog.start()
@@ -112,5 +123,6 @@ if send_debug: tg_bot.send_text("| Command listener started", TgBot.TG_ADMIN_CHA
 if send_debug: tg_bot.send_text("| Starting longpolling...", TgBot.TG_ADMIN_CHAT_ID)
 vk_bot_wrapper.start_polling()
 
+is_stopped = True
 tg_bot.send_text("<b>| Bot is stopped</b>", TgBot.TG_ADMIN_CHAT_ID)
 tg_bot.bot.stop_bot()

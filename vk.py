@@ -16,16 +16,16 @@ class VkListenerBot:
         self.vk: Bot = Bot(token=vk_token)
         self.vk_target_chat_id = vk_target_chat_id
         self.tg_bot = tg_sender_bot
-        #asyncio.run(self.test())
 
     def start_polling(self):
+        print("VkListenerBot: start_polling()")
         self.is_stopped = False
-        #@self.vk.on.raw_event()
-        #async def handler():
-        #    pass
-        # @self.vk.on.raw_event()
-        # async def test(a):
-        #     print("!")
+
+        async def on_shutdown_task():
+            print("on_shutdown_task()")
+            self.is_stopped = True
+
+        self.vk.loop_wrapper.on_shutdown.insert(0, on_shutdown_task())
 
         @self.vk.on.chat_message()
         async def message_handler(message: vkbottle.bot.Message):
@@ -37,7 +37,7 @@ class VkListenerBot:
                 sender_name: str = user.first_name + " " + user.last_name
                 text = sender_name + ": " + message.text
                 attachments = message.attachments
-                if (len(attachments)):
+                if len(attachments):
                     text += " [Unknown attachment]: " + str(attachments)
             except Exception as e:
                 text += " [Error while fetching more info]: " + str(e)
@@ -48,21 +48,18 @@ class VkListenerBot:
                 self.tg_bot.send_text(text, TgBot.TG_ADMIN_CHAT_ID, disable_notification=False, enable_html_md=False)
 
         while not self.is_stopped:
+            print("starting vk polling")
             try:
                 self.vk.run_forever()
             except Exception as e:
                 self.tg_bot.send_text("error while polling from vk bot. restarting\n"
                                       + str(e), TgBot.TG_ADMIN_CHAT_ID)
-                time.sleep(5)
+            time.sleep(5)
+        print("VkListenerBot: stopped")
 
     def stop(self):
         self.is_stopped = True
         self.vk.loop.stop()
-
-    async def watchdog_time_updater_task(self):
-        self.last_update_time = time.time()
-        #await self.tg_bot.send_text("wd_update", TgSenderBot.TG_ADMIN_CHAT_ID)
-        print("wd_update")
 
     def get_last_update_time(self):
         try:
