@@ -2,6 +2,9 @@ import time
 from typing import Optional
 
 import telebot
+from telebot.types import Message
+
+import db
 
 
 class TgBot:
@@ -13,25 +16,52 @@ class TgBot:
         TgBot.TG_CHANNEL_ID = channel_id
         TgBot.TG_ADMIN_CHAT_ID = admin_chat_id
 
+    def send_text_from_vk(
+            self,
+            text,
+            to_tg_chat_id,
+            vk_msg_id,
+            disable_notification: Optional[bool] = True,
+            enable_md: Optional[bool] = True) -> Message:
+        message = self.send_text(text=text,
+                                 to_chat_id=to_tg_chat_id,
+                                 disable_notification=disable_notification,
+                                 enable_md=enable_md)
+        db.log_msg_ids_correspondence(vk_msg_id, message.message_id)
+        return message
+
     def send_text(
             self,
             text,
             to_chat_id,
             disable_notification: Optional[bool] = True,
-            enable_md: Optional[bool] = True):
+            enable_md: Optional[bool] = True) -> Message:
         if enable_md:
             parse_mode = "Markdown"
         else:
             parse_mode = None
-        self.bot.send_message(to_chat_id, text, parse_mode=parse_mode, disable_notification=disable_notification)
         time.sleep(1)  # rate limit
+        return self.bot.send_message(to_chat_id, text, parse_mode=parse_mode, disable_notification=disable_notification)
 
-    def edit_message(self, text: str, chat_id: int, msg_id: int, enable_md: Optional[bool] = True):
+    def edit_message(self,
+                     text: str,
+                     chat_id: int,
+                     msg_id: int,
+                     enable_md: Optional[bool] = True):
         if enable_md:
             parse_mode = "Markdown"
         else:
             parse_mode = None
-        self.bot.edit_message_text(text=text, chat_id=chat_id, message_id=msg_id, parse_mode=parse_mode)
+        return self.bot.edit_message_text(
+            text=text,
+            chat_id=chat_id,
+            message_id=msg_id,
+            parse_mode=parse_mode)
 
-    def send_photo(self, url: str, chat_id: int):
-        self.bot.send_photo(photo=url, chat_id=chat_id)
+    def send_photo_from_vk(self, url: str, to_tg_chat_id: int, vk_msg_id):
+        message = self.send_photo(url=url, to_chat_id=to_tg_chat_id)
+        db.log_msg_ids_correspondence(vk_msg_id, message.message_id)
+        return message
+
+    def send_photo(self, url: str, to_chat_id: int):
+        return self.bot.send_photo(photo=url, chat_id=to_chat_id)

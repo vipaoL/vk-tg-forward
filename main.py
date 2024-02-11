@@ -107,7 +107,7 @@ def send_debug(text: str):
         tg_bot.send_text(text, TgBot.TG_ADMIN_CHAT_ID)
 
 
-logging.disable(logging.DEBUG)
+# logging.disable(logging.DEBUG)
 
 load_dotenv()
 

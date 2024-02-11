@@ -3,8 +3,10 @@ import traceback
 
 import vkbottle
 from vkbottle import Bot
-from vkbottle.bot import Message
+from vkbottle.bot import Message, MessageEvent
 from vkbottle_types.codegen.objects import UsersUserFull
+from vkbottle import GroupEventType
+from vkbottle_types.events.objects.group_event_objects import MessageEditObject
 from vkbottle_types.objects import MessagesMessageAttachmentType, MessagesMessageAttachment
 
 import utils
@@ -29,6 +31,10 @@ class VkListenerBot:
 
         self.vk.loop_wrapper.on_shutdown.insert(0, on_shutdown_task())
 
+        @self.vk.on.raw_event(GroupEventType.MESSAGE_EDIT, dataclass=MessageEvent)
+        async def message_edit_handler(event: MessageEditObject):
+            print(event.conversation_message_id)
+
         @self.vk.on.chat_message()
         async def message_handler(message: vkbottle.bot.Message):
             text = ""
@@ -48,7 +54,7 @@ class VkListenerBot:
                     text = "[" + str(len(attachments)) + " attachments] " + text
                 try:
                     for a in attachments:
-                        text += self.handle_attachment(a, to_tg_id)
+                        text += self.handle_attachment(a, message.message_id, to_tg_id)
                 except Exception as err_iterating_attachments:
                     text += " [Error while iterating attachments]"
                     print(err_iterating_attachments)
@@ -56,7 +62,7 @@ class VkListenerBot:
                 text += " [Error while fetching more info]: " + str(ex)
                 traceback.print_tb(ex.__traceback__)
             print(message.chat_id, text)
-            self.tg_bot.send_text(text, to_tg_id, disable_notification=False, enable_md=False)
+            self.tg_bot.send_text_from_vk(text, to_tg_id, message.message_id, disable_notification=False, enable_md=False)
 
         while not self.is_stopped:
             print("starting vk polling")
@@ -69,25 +75,27 @@ class VkListenerBot:
                 time.sleep(5)
         print("VkListenerBot: stopped")
 
-    def handle_attachment(self, a: MessagesMessageAttachment, to_tg_id: int) -> str:
+    def handle_attachment(self, a: MessagesMessageAttachment, from_vk_id: int, to_tg_id: int) -> str:
         if a.type == MessagesMessageAttachmentType.PHOTO:
-            self.forward_photo_attachment(a, to_tg_id)
+            self.forward_photo_attachment(attachment=a, from_vk_id=from_vk_id, to_tg_id=to_tg_id)
         else:
             return " [Unknown attachment]: " + str(a.type)
         return ""
 
-    def forward_photo_attachment(self, attachment: MessagesMessageAttachmentType.PHOTO, to_tg_id: int):
+    def forward_photo_attachment(self, attachment: MessagesMessageAttachmentType.PHOTO, from_vk_id: int, to_tg_id: int):
         max_w = -1
         largest_photo_variant = None
         for photo in attachment.photo.sizes:
             if photo.width > max_w:
                 largest_photo_variant = photo
-        self.tg_bot.send_photo(largest_photo_variant.url, chat_id=to_tg_id)
+        self.tg_bot.send_photo_from_vk(largest_photo_variant.url, to_tg_chat_id=to_tg_id, vk_msg_id=from_vk_id)
 
     def stop(self):
         self.is_stopped = True
-        self.tg_bot.send_text("Can't shut down properly. Use the fork of vkbottle", TgBot.TG_ADMIN_CHAT_ID)
-        self.vk.loop.stop()
+        try:
+            self.vk.loop.stop()
+        except AttributeError:
+            self.tg_bot.send_text("Can't shut down properly. Use the fork of vkbottle", TgBot.TG_ADMIN_CHAT_ID)
 
     def get_last_update_time(self):
         try:
