@@ -40,7 +40,13 @@ class Watchdog(Thread):
                                      + " " + os.getenv("TG_CHAT_ADMIN_USERNAME") + "*", TgBot.TG_ADMIN_CHAT_ID)
                 self.update_status_message(last_update_time)
             except Exception as e:
-                tg_bot.send_text("Err in wd " + str(e), TgBot.TG_ADMIN_CHAT_ID)
+                is_error_sent = False
+                while not is_error_sent:
+                    try:
+                        tg_bot.send_text("Err in wd " + str(e), TgBot.TG_ADMIN_CHAT_ID)
+                        is_error_sent = True
+                    except Exception as ex:
+                        print("Error while sending an other error" + str(ex))
 
     def update_status_message(self, last_time: int):
         text = ""
