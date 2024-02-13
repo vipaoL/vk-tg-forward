@@ -23,8 +23,8 @@ class TgBot:
             parse_mode = "Markdown"
         else:
             parse_mode = None
+        time.sleep(3)  # rate limit
         self.bot.send_message(to_chat_id, text, parse_mode=parse_mode, disable_notification=disable_notification)
-        time.sleep(1)  # rate limit
 
     def edit_message(self, text: str, chat_id: int, msg_id: int, enable_md: Optional[bool] = True):
         if enable_md:
@@ -34,4 +34,5 @@ class TgBot:
         self.bot.edit_message_text(text=text, chat_id=chat_id, message_id=msg_id, parse_mode=parse_mode)
 
     def send_photo(self, url: str, chat_id: int):
+        time.sleep(3)  # rate limit
         self.bot.send_photo(photo=url, chat_id=chat_id)
