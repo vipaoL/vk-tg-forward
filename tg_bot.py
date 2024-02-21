@@ -33,7 +33,7 @@ class TgBot:
             parse_mode = None
         self.bot.edit_message_text(text=text, chat_id=chat_id, message_id=msg_id, parse_mode=parse_mode)
 
-    def send_photo(self, url: str, chat_id: int):
+    def send_photo(self, url: str, chat_id: int, text: Optional[str] = ""):
         time.sleep(3)  # rate limit
         print("sending photo:", url)
-        self.bot.send_photo(photo=url, chat_id=chat_id)
+        self.bot.send_photo(photo=url, chat_id=chat_id, caption=text)

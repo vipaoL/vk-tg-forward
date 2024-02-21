@@ -1,5 +1,6 @@
 import time
 import traceback
+from typing import Optional
 
 import vkbottle
 from vkbottle import Bot
@@ -65,16 +66,28 @@ class VkListenerBot:
             sender_name: str = user.first_name + " " + user.last_name
             text = sender_name + ":" + text
             attachments = message.attachments
-            attachments_count, attachments_count_text = self.count_attachments(attachments)
-            text += attachments_count_text
+            attachments_count = self.count_attachments(attachments)
+            text += self.count_attachments_str(attachments)
             forwarded_list = message.fwd_messages
             if forwarded_list is not None and len(forwarded_list) > 0:
                 text += str(" [" + str(len(forwarded_list)) + " forwarded]:")
         except Exception as ex:
             text += " [Error while fetching more info]: " + str(ex)
             traceback.print_tb(ex.__traceback__)
+
         print(message.chat_id, text)
-        self.tg_bot.send_text(text, to_tg_id, disable_notification=False, enable_md=False)
+        text_is_sent_as_caption = False
+        if attachments_count > 0:
+            try:
+                if attachments[0].type == MessagesMessageAttachmentType.PHOTO:
+                    self.forward_photo_attachment(attachments[0], to_tg_id, text)
+                    attachments.pop(0)
+                    text_is_sent_as_caption = True
+            except Exception as ex:
+                print("Error while sending a photo with caption", ex)
+                traceback.print_tb(ex.__traceback__)
+        if not text_is_sent_as_caption:
+            self.tg_bot.send_text(text, to_tg_id, disable_notification=False, enable_md=False)
 
         try:
             self.handle_attachments(attachments, to_tg_id)
@@ -109,7 +122,7 @@ class VkListenerBot:
             print("Unknown attachment:", a.type)
             self.tg_bot.send_text("[Unknown attachment]: type=" + str(a.type.value), to_tg_id, disable_notification=True)
 
-    def forward_photo_attachment(self, attachment, to_tg_id: int):
+    def forward_photo_attachment(self, attachment, to_tg_id: int, text: Optional[str] = ""):
         max_w = -1
         largest_photo_variant = None
         for photo in attachment.photo.sizes:
@@ -117,23 +130,24 @@ class VkListenerBot:
             if w > max_w:
                 max_w = w
                 largest_photo_variant = photo
-        self.tg_bot.send_photo(largest_photo_variant.url, chat_id=to_tg_id)
+        self.tg_bot.send_photo(url=largest_photo_variant.url, chat_id=to_tg_id, text=text)
 
     def forward_wall_post_attachment(self, attachment: MessagesMessageAttachmentType.WALL, to_tg_id: int):
         author = ""  # attachment.wall.from.first_name + attachment.wall.from.last_name
-        attachment_count, attachment_count_text = self.count_attachments(attachment.wall.attachments)
-        text = "[Wall post]: " + attachment_count_text + " " + attachment.wall.text
+        text = "[Wall post]: " + self.count_attachments_str(attachment.wall.attachments) + " " + attachment.wall.text
         print(text)
         self.tg_bot.send_text(text, to_tg_id, enable_md=False)
         self.handle_attachments(attachment.wall.attachments, to_tg_id)
 
-    def count_attachments(self, attachments: list[MessagesMessageAttachment]) -> tuple[int, str]:
+    def count_attachments(self, attachments: list[MessagesMessageAttachment]) -> int:
         if attachments is not None and len(attachments) > 0:
             attachments_count = len(attachments)
-            text = " [" + str(len(attachments)) + " attachments]"
-            return attachments_count, text
+            return attachments_count
         else:
-            return 0, ""
+            return 0
+
+    def count_attachments_str(self, attachments: list[MessagesMessageAttachment]) -> str:
+        return " [" + str(self.count_attachments(attachments)) + " attachments]"
 
     def stop(self):
         self.is_stopped = True
