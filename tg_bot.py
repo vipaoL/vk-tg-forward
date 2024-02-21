@@ -35,4 +35,5 @@ class TgBot:
 
     def send_photo(self, url: str, chat_id: int):
         time.sleep(3)  # rate limit
+        print("sending photo:", url)
         self.bot.send_photo(photo=url, chat_id=chat_id)

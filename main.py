@@ -113,9 +113,11 @@ def send_debug(text: str):
         tg_bot.send_text(text, TgBot.TG_ADMIN_CHAT_ID)
 
 
-logging.disable(logging.DEBUG)
-
 load_dotenv()
+
+if os.getenv("DEBUG") != "TRUE":
+    print(os.getenv("DEBUG"))
+    logging.disable(logging.DEBUG)
 
 tg_bot = TgBot(os.getenv("TG_BOT_TOKEN"),
                int(os.getenv("TG_CHANNEL_ID")),
