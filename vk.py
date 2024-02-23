@@ -140,14 +140,16 @@ class VkListenerBot:
         self.handle_attachments(attachment.wall.attachments, to_tg_id)
 
     def count_attachments(self, attachments: list[MessagesMessageAttachment]) -> int:
-        if attachments is not None and len(attachments) > 0:
-            attachments_count = len(attachments)
-            return attachments_count
-        else:
+        if attachments is None:
             return 0
+        return len(attachments)
 
     def count_attachments_str(self, attachments: list[MessagesMessageAttachment]) -> str:
-        return " [" + str(self.count_attachments(attachments)) + " attachments]"
+        count = self.count_attachments(attachments)
+        if count > 0:
+            return " [" + str(count) + " attachments]"
+        else:
+            return ""
 
     def stop(self):
         self.is_stopped = True
