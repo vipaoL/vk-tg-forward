@@ -118,6 +118,8 @@ class VkListenerBot:
             self.forward_photo_attachment(a, to_tg_id)
         elif a.type == MessagesMessageAttachmentType.WALL:
             self.forward_wall_post_attachment(a, to_tg_id)
+        elif a.type == MessagesMessageAttachmentType.DOC:
+            self.forward_doc_attachment(a, to_tg_id)
         else:
             print("Unknown attachment:", a.type)
             self.tg_bot.send_text("[Unknown attachment]: type=" + str(a.type.value), to_tg_id, disable_notification=True)
@@ -131,6 +133,9 @@ class VkListenerBot:
                 max_w = w
                 largest_photo_variant = photo
         self.tg_bot.send_photo(url=largest_photo_variant.url, chat_id=to_tg_id, text=text)
+
+    def forward_doc_attachment(self, attachment: MessagesMessageAttachmentType.DOC, to_tg_id: int, text: Optional[str] = ""):
+        self.tg_bot.send_doc(url=attachment.doc.url, chat_id=to_tg_id, text=text)
 
     def forward_wall_post_attachment(self, attachment: MessagesMessageAttachmentType.WALL, to_tg_id: int):
         author = ""  # attachment.wall.from.first_name + attachment.wall.from.last_name
