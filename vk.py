@@ -7,7 +7,8 @@ from vkbottle import Bot
 from vkbottle.bot import Message
 from vkbottle.tools.dev.mini_types.bot.foreign_message import ForeignMessageMin
 from vkbottle_types.codegen.objects import UsersUserFull
-from vkbottle_types.objects import MessagesMessageAttachmentType, MessagesMessageAttachment, WallWallpostAttachmentType
+from vkbottle_types.objects import MessagesMessageAttachmentType, MessagesMessageAttachment, WallWallpostAttachmentType, \
+    MessagesMessageAction, MessagesMessageActionStatus
 
 import utils
 from tg_bot import TgBot
@@ -62,8 +63,7 @@ class VkListenerBot:
             if text != "":
                 text = " " + text
             sender_id = message.from_id
-            user: UsersUserFull = (await self.vk.api.users.get(user_ids=[sender_id], fields=["screen_name"]))[0]
-            sender_name: str = user.first_name + " " + user.last_name
+            sender_name: str = await self.fetch_user_name(sender_id)
             text = sender_name + ":" + text
             attachments = message.attachments
             attachments_count = self.count_attachments(attachments)
@@ -71,6 +71,9 @@ class VkListenerBot:
             forwarded_list = message.fwd_messages
             if forwarded_list is not None and len(forwarded_list) > 0:
                 text += str(" [" + str(len(forwarded_list)) + " forwarded]:")
+
+            action = message.action
+            text += await self.handle_action(action, sender_id)
         except Exception as ex:
             text += " [Error while fetching more info]: " + str(ex)
             traceback.print_tb(ex.__traceback__)
@@ -102,6 +105,42 @@ class VkListenerBot:
             err_text = " [Error while sending forwarded messages]: " + str(ex)
             self.tg_bot.send_text(err_text, TgBot.TG_ADMIN_CHAT_ID)
             traceback.print_tb(ex.__traceback__)
+
+    async def fetch_user_name(self, id: int) -> str:
+        user: UsersUserFull = (await self.vk.api.users.get(user_ids=[id], fields=["screen_name"]))[0]
+        return user.first_name + " " + user.last_name
+
+    async def handle_action(self, action: MessagesMessageAction, sender_id: int):
+        if action is None:
+            return ""
+        ret = " "
+        try:
+            action_type = action.type
+            if action_type == MessagesMessageActionStatus.CHAT_INVITE_USER:
+                if action.member_id == sender_id:
+                    ret += "joined the chat."
+                else:
+                    ret += "invited "
+                    ret += await self.fetch_user_name(action.member_id)
+            elif action_type == MessagesMessageActionStatus.CHAT_KICK_USER:
+                if action.member_id == sender_id:
+                    ret += "left the chat."
+                else:
+                    ret += "kicked "
+                    ret += await self.fetch_user_name(action.member_id)
+            else:
+                ret += "[ "
+                ret += str(action_type)
+                if action.member_id != sender_id:
+                    ret += ": " + str(action.member_id)
+                if action.message is not None:
+                    ret += ", " + str(action.message)
+                ret += " ]"
+        except Exception as ex:
+            ret += " [Error parsing action]: " + str(ex)
+            traceback.print_tb(ex.__traceback__)
+        return ret
+
 
     async def handle_forwarded(self, forwarded: list[ForeignMessageMin], to_tg_id: int):
         if forwarded is None or len(forwarded) < 1:
