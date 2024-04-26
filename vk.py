@@ -70,7 +70,7 @@ class VkListenerBot:
             text += self.count_attachments_str(attachments)
             forwarded_list = message.fwd_messages
             if forwarded_list is not None and len(forwarded_list) > 0:
-                text += str(" [" + str(len(forwarded_list)) + " forwarded]:")
+                text += str(" [" + str(len(forwarded_list)) + " ↩️]:")
 
             action = message.action
             text += await self.handle_action(action, sender_id)
@@ -159,9 +159,11 @@ class VkListenerBot:
             self.forward_wall_post_attachment(a, to_tg_id)
         elif a.type == MessagesMessageAttachmentType.DOC:
             self.forward_doc_attachment(a, to_tg_id)
+        elif a.type == MessagesMessageAttachmentType.STICKER:
+            self.forward_sticker_attachment(a, to_tg_id)
         else:
-            print("Unknown attachment:", a.type)
-            self.tg_bot.send_text("[Unknown attachment]: type=" + str(a.type.value), to_tg_id, disable_notification=True)
+            print("📎 Unknown:", a.type)
+            self.tg_bot.send_text("[📎 Unknown]: type=" + str(a.type.value), to_tg_id, disable_notification=True)
 
     def forward_photo_attachment(self, attachment, to_tg_id: int, text: Optional[str] = ""):
         max_w = -1
@@ -176,9 +178,13 @@ class VkListenerBot:
     def forward_doc_attachment(self, attachment: MessagesMessageAttachmentType.DOC, to_tg_id: int, text: Optional[str] = ""):
         self.tg_bot.send_doc(url=attachment.doc.url, chat_id=to_tg_id, text=text)
 
+    def forward_sticker_attachment(self, attachment: MessagesMessageAttachmentType.STICKER, to_tg_id: int,
+                               text: Optional[str] = ""):
+        self.tg_bot.send_doc(url=attachment.sticker, chat_id=to_tg_id, text=text)
+
     def forward_wall_post_attachment(self, attachment: MessagesMessageAttachmentType.WALL, to_tg_id: int):
         author = ""  # attachment.wall.from.first_name + attachment.wall.from.last_name
-        text = "[Wall post]: " + self.count_attachments_str(attachment.wall.attachments) + " " + attachment.wall.text
+        text = "[📃]: " + self.count_attachments_str(attachment.wall.attachments) + " " + attachment.wall.text
         print(text)
         self.tg_bot.send_text(text, to_tg_id, enable_md=False)
         self.handle_attachments(attachment.wall.attachments, to_tg_id)
@@ -191,7 +197,7 @@ class VkListenerBot:
     def count_attachments_str(self, attachments: list[MessagesMessageAttachment]) -> str:
         count = self.count_attachments(attachments)
         if count > 0:
-            return " [" + str(count) + " attachments]"
+            return " [" + str(count) + " 📎]"
         else:
             return ""
 
