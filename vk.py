@@ -78,7 +78,7 @@ class VkListenerBot:
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
         except Exception as ex:
-            text += " [Error while fetching more info]: " + str(ex)
+            text += " [Ошибка получения дополнительной информации]: " + str(ex)
             traceback.print_tb(ex.__traceback__)
 
         print(message.chat_id, text)
@@ -97,14 +97,14 @@ class VkListenerBot:
         try:
             self.handle_attachments(attachments, to_tg_id)
         except Exception as ex:
-            err_text = " [Error while sending attachments]: " + str(ex)
+            err_text = " [Ошибка отправки вложений]: " + str(ex)
             self.tg_bot.send_text(err_text, TgBot.TG_ADMIN_CHAT_ID)
             traceback.print_tb(ex.__traceback__)
 
         try:
             await self.handle_forwarded(forwarded_list, to_tg_id)
         except Exception as ex:
-            err_text = " [Error while sending forwarded messages]: " + str(ex)
+            err_text = " [Ошибка отправки пересланных]: " + str(ex)
             self.tg_bot.send_text(err_text, TgBot.TG_ADMIN_CHAT_ID)
             traceback.print_tb(ex.__traceback__)
 
@@ -120,15 +120,15 @@ class VkListenerBot:
             action_type = action.type
             if action_type == MessagesMessageActionStatus.CHAT_INVITE_USER:
                 if action.member_id == sender_id:
-                    ret += "joined the chat."
+                    ret += "присоединился к беседе"
                 else:
-                    ret += "invited "
+                    ret += "пригласил "
                     ret += await self.fetch_user_name(action.member_id)
             elif action_type == MessagesMessageActionStatus.CHAT_KICK_USER:
                 if action.member_id == sender_id:
-                    ret += "left the chat."
+                    ret += "покинул беседу"
                 else:
-                    ret += "kicked "
+                    ret += "исключил "
                     ret += await self.fetch_user_name(action.member_id)
             else:
                 ret += "[ "
@@ -139,7 +139,7 @@ class VkListenerBot:
                     ret += ", " + str(action.message)
                 ret += " ]"
         except Exception as ex:
-            ret += " [Error parsing action]: " + str(ex)
+            ret += " [Ошибка разбора действия]: " + str(ex)
             traceback.print_tb(ex.__traceback__)
         return ret
 
@@ -163,8 +163,8 @@ class VkListenerBot:
         elif a.type == MessagesMessageAttachmentType.STICKER:
             self.forward_sticker_attachment(a, to_tg_id, text)
         else:
-            print("📎 Unknown:", a.type)
-            self.tg_bot.send_text(text + "\n[📎 Unknown]: type=" + str(a.type.value), to_tg_id, disable_notification=True)
+            print("📎 Неизвестное вложение:", a.type)
+            self.tg_bot.send_text(text + "\n[📎 Неизвестное вложение]: type=" + str(a.type.value), to_tg_id, disable_notification=True)
 
     def forward_photo_attachment(self, attachment, to_tg_id: int, text: Optional[str] = ""):
         self.tg_bot.send_photo(url=find_largest_photo(attachment.photo.sizes).url, chat_id=to_tg_id, text=text)
