@@ -89,7 +89,7 @@ class VkListenerBot:
                 attachments.pop(0)
                 text_is_sent_as_caption = True
             except Exception as ex:
-                print("Error while sending a photo with caption", ex)
+                print("Error while sending attachment with a caption", ex)
                 traceback.print_tb(ex.__traceback__)
         if not text_is_sent_as_caption:
             self.tg_bot.send_text(text, to_tg_id, disable_notification=False, enable_md=False)
@@ -147,7 +147,7 @@ class VkListenerBot:
         if forwarded is None or len(forwarded) < 1:
             return ""
         for fwd_message in forwarded:
-            await self.handle_message("↩️ ", fwd_message, to_tg_id)
+            await self.handle_message("[Переслано]: ", fwd_message, to_tg_id)
 
     def handle_attachments(self, attachments: list[MessagesMessageAttachment], to_tg_id: int):
         for a in attachments:
@@ -177,12 +177,25 @@ class VkListenerBot:
                                    text: Optional[str] = ""):
         self.tg_bot.send_photo(url=find_largest_photo(attachment.sticker.images).url, chat_id=to_tg_id, text=text)
 
-    def forward_wall_post_attachment(self, attachment: MessagesMessageAttachmentType.WALL, to_tg_id: int):
+    def forward_wall_post_attachment(self, attachment: MessagesMessageAttachmentType.WALL, to_tg_id: int,
+                                     text: Optional[str] = ""):
         author = ""  # attachment.wall.from.first_name + attachment.wall.from.last_name
-        text = "[📃]: " + self.count_attachments_str(attachment.wall.attachments) + " " + attachment.wall.text
+        text += "\n[Запись на стене]: " + self.count_attachments_str(attachment.wall.attachments) + " " + attachment.wall.text
         print(text)
-        self.tg_bot.send_text(text, to_tg_id, enable_md=False)
-        self.handle_attachments(attachment.wall.attachments, to_tg_id)
+
+        attachments = attachment.wall.attachments
+        text_is_sent_as_caption = False
+        if self.count_attachments(attachments) > 0:
+            try:
+                self.handle_attachment(attachments[0], to_tg_id, text)
+                attachments.pop(0)
+                text_is_sent_as_caption = True
+            except Exception as ex:
+                print("Error while sending attachment with a caption", ex)
+                traceback.print_tb(ex.__traceback__)
+        if not text_is_sent_as_caption:
+            self.tg_bot.send_text(text, to_tg_id, enable_md=False)
+        self.handle_attachments(attachments, to_tg_id)
 
     def count_attachments(self, attachments: list[MessagesMessageAttachment]) -> int:
         if attachments is None:
