@@ -6,7 +6,7 @@ import vkbottle
 from vkbottle import Bot
 from vkbottle.bot import Message
 from vkbottle.tools.dev.mini_types.bot.foreign_message import ForeignMessageMin
-from vkbottle_types.codegen.objects import UsersUserFull
+from vkbottle_types.codegen.objects import UsersUserFull, BaseSticker, BaseImage
 from vkbottle_types.objects import MessagesMessageAttachmentType, MessagesMessageAttachment, WallWallpostAttachmentType, \
     MessagesMessageAction, MessagesMessageActionStatus
 
@@ -72,8 +72,11 @@ class VkListenerBot:
             if forwarded_list is not None and len(forwarded_list) > 0:
                 text += str(" [" + str(len(forwarded_list)) + " ↩️]:")
 
-            action = message.action
-            text += await self.handle_action(action, sender_id)
+            try:
+                action = message.action
+                text += await self.handle_action(action, sender_id)
+            except Exception as e:
+                traceback.print_tb(e.__traceback__)
         except Exception as ex:
             text += " [Error while fetching more info]: " + str(ex)
             traceback.print_tb(ex.__traceback__)
@@ -82,10 +85,9 @@ class VkListenerBot:
         text_is_sent_as_caption = False
         if attachments_count > 0:
             try:
-                if attachments[0].type == MessagesMessageAttachmentType.PHOTO:
-                    self.forward_photo_attachment(attachments[0], to_tg_id, text)
-                    attachments.pop(0)
-                    text_is_sent_as_caption = True
+                self.handle_attachment(attachments[0], to_tg_id, text)
+                attachments.pop(0)
+                text_is_sent_as_caption = True
             except Exception as ex:
                 print("Error while sending a photo with caption", ex)
                 traceback.print_tb(ex.__traceback__)
@@ -141,7 +143,6 @@ class VkListenerBot:
             traceback.print_tb(ex.__traceback__)
         return ret
 
-
     async def handle_forwarded(self, forwarded: list[ForeignMessageMin], to_tg_id: int):
         if forwarded is None or len(forwarded) < 1:
             return ""
@@ -152,35 +153,29 @@ class VkListenerBot:
         for a in attachments:
             self.handle_attachment(a, to_tg_id)
 
-    def handle_attachment(self, a: MessagesMessageAttachment, to_tg_id: int):
+    def handle_attachment(self, a: MessagesMessageAttachment, to_tg_id: int, text: Optional[str] = ""):
         if a.type == MessagesMessageAttachmentType.PHOTO or a.type == WallWallpostAttachmentType.PHOTO:
-            self.forward_photo_attachment(a, to_tg_id)
+            self.forward_photo_attachment(a, to_tg_id, text)
         elif a.type == MessagesMessageAttachmentType.WALL:
-            self.forward_wall_post_attachment(a, to_tg_id)
+            self.forward_wall_post_attachment(a, to_tg_id, text)
         elif a.type == MessagesMessageAttachmentType.DOC:
-            self.forward_doc_attachment(a, to_tg_id)
+            self.forward_doc_attachment(a, to_tg_id, text)
         elif a.type == MessagesMessageAttachmentType.STICKER:
-            self.forward_sticker_attachment(a, to_tg_id)
+            self.forward_sticker_attachment(a, to_tg_id, text)
         else:
             print("📎 Unknown:", a.type)
-            self.tg_bot.send_text("[📎 Unknown]: type=" + str(a.type.value), to_tg_id, disable_notification=True)
+            self.tg_bot.send_text(text + "\n[📎 Unknown]: type=" + str(a.type.value), to_tg_id, disable_notification=True)
 
     def forward_photo_attachment(self, attachment, to_tg_id: int, text: Optional[str] = ""):
-        max_w = -1
-        largest_photo_variant = None
-        for photo in attachment.photo.sizes:
-            w = photo.width
-            if w > max_w:
-                max_w = w
-                largest_photo_variant = photo
-        self.tg_bot.send_photo(url=largest_photo_variant.url, chat_id=to_tg_id, text=text)
+        self.tg_bot.send_photo(url=find_largest_photo(attachment.photo.sizes).url, chat_id=to_tg_id, text=text)
 
-    def forward_doc_attachment(self, attachment: MessagesMessageAttachmentType.DOC, to_tg_id: int, text: Optional[str] = ""):
+    def forward_doc_attachment(self, attachment: MessagesMessageAttachmentType.DOC, to_tg_id: int,
+                               text: Optional[str] = ""):
         self.tg_bot.send_doc(url=attachment.doc.url, chat_id=to_tg_id, text=text)
 
     def forward_sticker_attachment(self, attachment: MessagesMessageAttachmentType.STICKER, to_tg_id: int,
-                               text: Optional[str] = ""):
-        self.tg_bot.send_doc(url=attachment.sticker, chat_id=to_tg_id, text=text)
+                                   text: Optional[str] = ""):
+        self.tg_bot.send_photo(url=find_largest_photo(attachment.sticker.images).url, chat_id=to_tg_id, text=text)
 
     def forward_wall_post_attachment(self, attachment: MessagesMessageAttachmentType.WALL, to_tg_id: int):
         author = ""  # attachment.wall.from.first_name + attachment.wall.from.last_name
@@ -217,3 +212,14 @@ class VkListenerBot:
 
     def get_last_update_time_str(self) -> str:
         return utils.get_last_update_time_str(self.get_last_update_time())
+
+
+def find_largest_photo(sizes_list: list[BaseImage]) -> BaseImage:
+    max_w = -1
+    largest_photo_variant = None
+    for photo in sizes_list:
+        w = photo.width
+        if w > max_w:
+            max_w = w
+            largest_photo_variant = photo
+    return largest_photo_variant
