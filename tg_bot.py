@@ -3,6 +3,8 @@ from typing import Optional
 
 import telebot
 
+MAX_RETRY_COUNT = 3
+
 
 class TgBot:
     TG_CHANNEL_ID: int = None
@@ -23,8 +25,17 @@ class TgBot:
             parse_mode = "Markdown"
         else:
             parse_mode = None
-        time.sleep(3)  # rate limit
-        self.bot.send_message(to_chat_id, text, parse_mode=parse_mode, disable_notification=disable_notification)
+
+        retries_left = MAX_RETRY_COUNT
+        while retries_left > 0:
+            retries_left -= 1
+            time.sleep(3)  # rate limit
+            try:
+                self.bot.send_message(to_chat_id, text, parse_mode=parse_mode, disable_notification=disable_notification)
+                break
+            except Exception as e:
+                if retries_left <= 0:
+                    raise e
 
     def edit_message(self, text: str, chat_id: int, msg_id: int, enable_md: Optional[bool] = True):
         if enable_md:
@@ -36,9 +47,31 @@ class TgBot:
     def send_photo(self, url: str, chat_id: int, text: Optional[str] = ""):
         time.sleep(3)  # rate limit
         print("sending photo:", url)
-        self.bot.send_photo(photo=url, chat_id=chat_id, caption=text)
+
+        retries_left = MAX_RETRY_COUNT
+        while retries_left > 0:
+            retries_left -= 1
+            try:
+                self.bot.send_photo(photo=url, chat_id=chat_id, caption=text)
+                break
+            except Exception as e:
+                e.args = (str(type(e).__name__) + ", url=" + url, *e.args)
+                if retries_left <= 0:
+                    self.send_text("[Ошибка отправки вложения: " + url + " ]", to_chat_id=chat_id, enable_md=False)
+                    raise e
 
     def send_doc(self, url: str, chat_id: int, text: Optional[str] = ""):
         time.sleep(3)  # rate limit
         print("sending doc:", url)
-        self.bot.send_document(chat_id=chat_id, document=url, caption=text)
+
+        retries_left = MAX_RETRY_COUNT
+        while retries_left > 0:
+            retries_left -= 1
+            try:
+                self.bot.send_document(chat_id=chat_id, document=url, caption=text)
+                break
+            except Exception as e:
+                e.args = (str(type(e).__name__) + ", url=" + url, *e.args)
+                if retries_left <= 0:
+                    self.send_text("[Ошибка отправки вложения: " + url + " ]", to_chat_id=chat_id, enable_md=False)
+                    raise e

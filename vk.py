@@ -94,12 +94,12 @@ class VkListenerBot:
         if attachments_count > 0:
             try:
                 self.handle_attachment(attachments[0], to_tg_id, text)
-                attachments.pop(0)
                 text_is_sent_as_caption = True
             except Exception as ex:
                 print("Error while sending attachment with a caption", ex)
                 print(ex)
                 traceback.print_tb(ex.__traceback__)
+            attachments.pop(0)
         if not text_is_sent_as_caption:
             self.tg_bot.send_text(text, to_tg_id, disable_notification=False, enable_md=False)
 
