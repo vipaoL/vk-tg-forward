@@ -52,7 +52,9 @@ class Watchdog(Thread):
         text = ""
         if is_stopped:
             text += "*Stopped.* "
-        text += utils.get_last_update_time_str(last_time) + " - last update"
+        text += (utils.get_last_update_time_str(last_time)
+                 + " - последняя проверка новых сообщений. Если бот перестал работать, пишите "
+                 + os.getenv("TG_CHAT_ADMIN_USERNAME"))
         print("edit", text, self.status_msg_id)
         tg_bot.edit_message(text=text,
                             chat_id=TgBot.TG_CHANNEL_ID,
