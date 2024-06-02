@@ -73,12 +73,20 @@ class VkListenerBot:
                 text += str(" [" + str(len(forwarded_list)) + " ↩️]:")
 
             try:
+                if message.is_cropped:
+                    text += "\n[⚠ ВК обрезал сообщение для бота. Возможно, у него больше вложений]"
+            except:
+                pass
+
+            try:
                 action = message.action
                 text += await self.handle_action(action, sender_id)
             except Exception as e:
+                print(e)
                 traceback.print_tb(e.__traceback__)
         except Exception as ex:
             text += " [Ошибка получения дополнительной информации]: " + str(ex)
+            print(ex)
             traceback.print_tb(ex.__traceback__)
 
         print(message.chat_id, text)
@@ -90,6 +98,7 @@ class VkListenerBot:
                 text_is_sent_as_caption = True
             except Exception as ex:
                 print("Error while sending attachment with a caption", ex)
+                print(ex)
                 traceback.print_tb(ex.__traceback__)
         if not text_is_sent_as_caption:
             self.tg_bot.send_text(text, to_tg_id, disable_notification=False, enable_md=False)
@@ -99,6 +108,7 @@ class VkListenerBot:
         except Exception as ex:
             err_text = " [Ошибка отправки вложений]: " + str(ex)
             self.tg_bot.send_text(err_text, TgBot.TG_ADMIN_CHAT_ID)
+            print(ex)
             traceback.print_tb(ex.__traceback__)
 
         try:
@@ -106,6 +116,7 @@ class VkListenerBot:
         except Exception as ex:
             err_text = " [Ошибка отправки пересланных]: " + str(ex)
             self.tg_bot.send_text(err_text, TgBot.TG_ADMIN_CHAT_ID)
+            print(ex)
             traceback.print_tb(ex.__traceback__)
 
     async def fetch_user_name(self, id: int) -> str:
@@ -140,6 +151,7 @@ class VkListenerBot:
                 ret += " ]"
         except Exception as ex:
             ret += " [Ошибка разбора действия]: " + str(ex)
+            print(ex)
             traceback.print_tb(ex.__traceback__)
         return ret
 
