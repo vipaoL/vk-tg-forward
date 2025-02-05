@@ -5,7 +5,7 @@ from typing import Optional
 import vkbottle
 from vkbottle import Bot
 from vkbottle.bot import Message
-from vkbottle.tools.dev.mini_types.bot.foreign_message import ForeignMessageMin
+from vkbottle.tools.mini_types.bot.foreign_message import ForeignMessageMin
 from vkbottle_types.codegen.objects import UsersUserFull, BaseSticker, BaseImage
 from vkbottle_types.objects import MessagesMessageAttachmentType, MessagesMessageAttachment, WallWallpostAttachmentType, \
     MessagesMessageAction, MessagesMessageActionStatus
