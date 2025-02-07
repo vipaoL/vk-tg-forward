@@ -172,6 +172,8 @@ class VkListenerBot:
             self.forward_wall_post_attachment(a, to_tg_id, text)
         elif a.type == MessagesMessageAttachmentType.DOC:
             self.forward_doc_attachment(a, to_tg_id, text)
+        elif a.type == MessagesMessageAttachmentType.LINK:
+            self.forward_link_attachment(a, to_tg_id, text)
         elif a.type == MessagesMessageAttachmentType.STICKER:
             self.forward_sticker_attachment(a, to_tg_id, text)
         else:
@@ -184,6 +186,13 @@ class VkListenerBot:
     def forward_doc_attachment(self, attachment: MessagesMessageAttachmentType.DOC, to_tg_id: int,
                                text: Optional[str] = ""):
         self.tg_bot.send_doc(url=attachment.doc.url, chat_id=to_tg_id, text=text)
+
+    def forward_link_attachment(self, attachment: MessagesMessageAttachmentType.LINK, to_tg_id: int,
+                               text: Optional[str] = ""):
+        title = attachment.link.title
+        url = attachment.link.url
+        self.tg_bot.send_text(text.replace("[", "\[")
+                              + "\n\[Ссылка] [" + title + "](" + url + ")", to_tg_id, enable_md=True)
 
     def forward_sticker_attachment(self, attachment: MessagesMessageAttachmentType.STICKER, to_tg_id: int,
                                    text: Optional[str] = ""):
