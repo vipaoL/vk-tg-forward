@@ -1,0 +1,48 @@
+From 2329923d9cf003433fc0fa186b0c5ada36b40498 Mon Sep 17 00:00:00 2001
+From: vipoll <vipollmail@gmail.com>
+Date: Thu, 6 Feb 2025 00:11:55 +0400
+Subject: [PATCH] BotPolling: add a property for last longpoll request
+
+---
+ vkbottle/polling/bot_polling.py | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/vkbottle/polling/bot_polling.py b/vkbottle/polling/bot_polling.py
+index 43c5c8a..a515dd6 100644
+--- a/vkbottle/polling/bot_polling.py
++++ b/vkbottle/polling/bot_polling.py
+@@ -10,6 +10,8 @@ from vkbottle.modules import logger
+ 
+ from .abc import ABCPolling
+ 
++import time
++
+ if TYPE_CHECKING:
+     from vkbottle.api import ABCAPI
+     from vkbottle.exception_factory import ABCErrorHandler
+@@ -40,10 +42,12 @@ class BotPolling(ABCPolling):
+         self.wait = wait or 15
+         self.rps_delay = rps_delay or 0
+         self.stop = False
++        self.last_long_request_time = 0
+ 
+     async def get_event(self, server: dict) -> dict:
+         # sourcery skip: use-fstring-for-formatting
+         logger.debug("Making long request to get event with longpoll...")
++        self.last_long_request_time = time.time()
+         return await self.api.http_client.request_json(
+             "{}?act=a_check&key={}&ts={}&wait={}&rps_delay={}".format(
+                 server["server"],
+@@ -68,6 +72,9 @@ class BotPolling(ABCPolling):
+             )
+         )["response"]
+ 
++    def get_last_long_request_time(self) -> int:
++        return self.last_long_request_time
++
+     async def handle_failed_event(self, server: dict, event: dict) -> dict:
+         try:
+             failed = PollingFailureCode(event["failed"])
+-- 
+2.48.1
+

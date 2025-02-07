@@ -228,15 +228,19 @@ class VkListenerBot:
 
     def get_last_update_time(self):
         try:
-            last_event_fetch_time = self.vk.polling.get_last_event_fetch_time()
+            return self.vk.polling.get_last_long_request_time()
         except AttributeError as e:
             print(e)
-            print("!!!!!!!!!!!!![use fork of vkbottle. watchdog is not working]!!!!!!!!!!!!!!")
-            last_event_fetch_time = time.time()
-        return last_event_fetch_time
+            print("!!!!!!!!!!!!![watchdog is not working! please apply patch to vkbottle]!!!!!!!!!!!!!!")
+            print("git apply 0001-BotPolling-add-a-property-for-last-longpoll-request.patch --directory=.venv/lib/python3.11/site-packages/")
+            return 0
 
     def get_last_update_time_str(self) -> str:
-        return utils.get_last_update_time_str(self.get_last_update_time())
+        t = self.get_last_update_time()
+        if t == 0:
+            return "???"
+        else:
+            return utils.get_time_str(t)
 
 
 def find_largest_photo(sizes_list: list[BaseImage]) -> BaseImage:

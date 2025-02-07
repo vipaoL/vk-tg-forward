@@ -34,11 +34,11 @@ class Watchdog(Thread):
 
                 last_update_time = vk_bot.get_last_update_time()
 
-                if time.time() - last_update_time > 120:
+                if time.time() - last_update_time > 120 and last_update_time != 0:
                     tg_bot.send_text("*It seems like the bridge stopped working! Last checked for new messages: " +
                                      vk_bot.get_last_update_time_str()
                                      + " " + os.getenv("TG_CHAT_ADMIN_USERNAME") + "*", TgBot.TG_ADMIN_CHAT_ID)
-                self.update_status_message(last_update_time)
+                self.update_status_message(vk_bot.get_last_update_time_str())
             except Exception as e:
                 is_error_sent = False
                 while not is_error_sent:
@@ -48,11 +48,11 @@ class Watchdog(Thread):
                     except Exception as ex:
                         print("Error while sending an other error" + str(ex))
 
-    def update_status_message(self, last_time: int):
+    def update_status_message(self, last_request_time: str):
         text = ""
         if is_stopped:
             text += "*Stopped.* "
-        text += (utils.get_last_update_time_str(last_time)
+        text += (last_request_time
                  + " - последняя проверка новых сообщений. Если бот перестал работать, пишите "
                  + os.getenv("TG_CHAT_ADMIN_USERNAME"))
         print("edit", text, self.status_msg_id)
