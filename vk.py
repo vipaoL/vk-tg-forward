@@ -271,7 +271,7 @@ class VkListenerBot:
         except AttributeError as e:
             print(e)
             print("!!!!!!!!!!!!![watchdog is not working! please apply patch to vkbottle]!!!!!!!!!!!!!!")
-            print("git apply 0001-BotPolling-add-a-property-for-last-longpoll-request.patch --directory=.venv/lib/python3.11/site-packages/")
+            print("git apply --whitespace=fix 0001-BotPolling-add-a-property-for-last-longpoll-request.patch --directory=.venv/lib/python3.11/site-packages/")
             return 0
 
     def get_last_update_time_str(self) -> str:
