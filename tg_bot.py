@@ -60,7 +60,8 @@ class TgBot:
                     self.send_text("[Ошибка отправки вложения: " + url + " ]", to_chat_id=chat_id, enable_md=False)
                     raise e
 
-    def send_doc(self, url: str, chat_id: int, text: Optional[str] = "", enable_md: Optional[bool] = True):
+    def send_doc(self, url: str, chat_id: int, text: Optional[str] = "",
+                 file: Optional = None, file_name: Optional[str] = None, enable_md: Optional[bool] = False):
         time.sleep(3)  # rate limit
         print("sending doc:", url)
 
@@ -73,7 +74,10 @@ class TgBot:
         while retries_left > 0:
             retries_left -= 1
             try:
-                self.bot.send_document(chat_id=chat_id, document=url, caption=text, parse_mode=parse_mode)
+                if file is not None:
+                    self.bot.send_document(chat_id=chat_id, document=file, visible_file_name=file_name, caption=text, parse_mode=parse_mode)
+                else:
+                    self.bot.send_document(chat_id=chat_id, document=url, caption=text, parse_mode=parse_mode)
                 break
             except Exception as e:
                 e.args = (str(type(e).__name__) + ", url=" + url, *e.args)

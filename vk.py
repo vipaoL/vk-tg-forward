@@ -1,6 +1,7 @@
 import time
 import traceback
 from typing import Optional
+from urllib.request import urlopen
 
 import vkbottle
 from vkbottle import Bot
@@ -192,7 +193,9 @@ class VkListenerBot:
 
     def forward_doc_attachment(self, attachment: MessagesMessageAttachmentType.DOC, to_tg_id: int,
                                text: Optional[str] = ""):
-        self.tg_bot.send_doc(url=attachment.doc.url, chat_id=to_tg_id, text=text)
+        url = attachment.doc.url
+        with urlopen(url) as f:
+            self.tg_bot.send_doc(url=url, chat_id=to_tg_id, text=text, file=f, file_name=attachment.doc.title)
 
     def forward_audio_message_attachment(self, attachment: MessagesMessageAttachmentType.AUDIO_MESSAGE, to_tg_id: int,
                                text: Optional[str] = ""):
