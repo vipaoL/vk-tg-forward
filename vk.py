@@ -200,13 +200,15 @@ class VkListenerBot:
 
     def forward_audio_attachment(self, attachment: MessagesMessageAttachmentType.AUDIO, to_tg_id: int,
                                text: Optional[str] = ""):
-        url = attachment.audio.url
-        if url is None or url == "":
-            url = "https://vk.com/audio" + str(attachment.audio.owner_id) + "_" + str(attachment.audio.id)
         artist = attachment.audio.artist
         title = attachment.audio.title
-        self.tg_bot.send_text(text.replace("[", "\[")
-                              + "\n\[Аудио] [" + artist + " – " + title + "](" + url + ")", to_tg_id, enable_md=True)
+        url = "https://vk.com/audio" + str(attachment.audio.owner_id) + "_" + str(attachment.audio.id)
+        file_url = attachment.audio.url
+        text = text.replace("[", "\[") + "\n\[Аудио] [" + artist + " – " + title + "](" + url + ")"
+        if True or url is None or url == "": # TODO
+            self.tg_bot.send_text(text, to_tg_id, enable_md=True)
+        else:
+            self.tg_bot.send_doc(url=file_url, chat_id=to_tg_id, text=text, enable_md=True)
 
     def forward_graffiti_attachment(self, attachment: MessagesMessageAttachmentType.DOC, to_tg_id: int,
                                text: Optional[str] = ""):
