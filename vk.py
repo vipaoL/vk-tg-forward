@@ -166,6 +166,7 @@ class VkListenerBot:
             self.handle_attachment(a, to_tg_id)
 
     def handle_attachment(self, a: MessagesMessageAttachment, to_tg_id: int, text: Optional[str] = ""):
+        print(a)
         if a.type == MessagesMessageAttachmentType.PHOTO or a.type == WallWallpostAttachmentType.PHOTO:
             self.forward_photo_attachment(a, to_tg_id, text)
         elif a.type == MessagesMessageAttachmentType.WALL:
