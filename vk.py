@@ -175,6 +175,8 @@ class VkListenerBot:
             self.forward_doc_attachment(a, to_tg_id, text)
         elif a.type == MessagesMessageAttachmentType.AUDIO_MESSAGE:
             self.forward_audio_message_attachment(a, to_tg_id, text)
+        elif a.type == MessagesMessageAttachmentType.GRAFFITI:
+            self.forward_graffiti_attachment(a, to_tg_id, text)
         elif a.type == MessagesMessageAttachmentType.LINK:
             self.forward_link_attachment(a, to_tg_id, text)
         elif a.type == MessagesMessageAttachmentType.STICKER:
@@ -193,6 +195,10 @@ class VkListenerBot:
     def forward_audio_message_attachment(self, attachment: MessagesMessageAttachmentType.AUDIO_MESSAGE, to_tg_id: int,
                                text: Optional[str] = ""):
         self.tg_bot.send_doc(url=attachment.audio_message.link_ogg, chat_id=to_tg_id, text=text)
+
+    def forward_graffiti_attachment(self, attachment: MessagesMessageAttachmentType.DOC, to_tg_id: int,
+                               text: Optional[str] = ""):
+        self.tg_bot.send_photo(url=attachment.graffiti.url, chat_id=to_tg_id, text=text + " [Граффити]")
 
     def forward_link_attachment(self, attachment: MessagesMessageAttachmentType.LINK, to_tg_id: int,
                                text: Optional[str] = ""):
